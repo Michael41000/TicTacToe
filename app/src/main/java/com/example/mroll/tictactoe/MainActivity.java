@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private int moveNum = 1;
+    private int moveNum;
     final private int ROWLENGTH = 3;
     private Button[] buttons;
     private TextView winTextView;
@@ -34,13 +34,34 @@ public class MainActivity extends AppCompatActivity {
 
         buttons = new Button[]{button1, button2, button3, button4, button5, button6, button7, button8, button9};
 
-        winTextView = findViewById(R.id.winTextView);
-
-        winConditions = new int[]{0,0,0,0,0,0,0,0};
-
         for (int i = 0; i < buttons.length; i++)
         {
-                buttons[i].setOnClickListener(buttonListener);
+            buttons[i].setOnClickListener(buttonListener);
+        }
+
+        winTextView = findViewById(R.id.winTextView);
+
+        if (savedInstanceState == null) {
+            winConditions = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+            moveNum = 1;
+        }
+        else {
+            winConditions = savedInstanceState.getIntArray("winConditions");
+            moveNum = savedInstanceState.getInt("moveNum");
+
+            for (int i = 0; i < winConditions.length; i++)
+            {
+                Log.d("winConditons", String.valueOf(winConditions[i]));
+                if (winConditions[i] == 3 || winConditions[i] == -3)
+                {
+                    Log.d("anotherWinCondtions", "hello");
+                    for (int j = 0; j < buttons.length; j++)
+                    {
+                        buttons[j].setClickable(false);
+                    }
+                    break;
+                }
+            }
         }
 
         final Button resetButton = findViewById(R.id.resetButton);
@@ -65,6 +86,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("moveNum", moveNum);
+        outState.putIntArray("winConditions", winConditions);
+    }
+
     private View.OnClickListener buttonListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -74,76 +102,74 @@ public class MainActivity extends AppCompatActivity {
 
             int rowNum = Integer.parseInt((String) row.getTag());
             int colNum = Integer.parseInt((String) currentButton.getTag());
-            if (currentButton.getText().equals(""))
+            // X turn to move on odd nums
+            if (moveNum % 2 != 0)
             {
-                // X turn to move on odd nums
-                if (moveNum % 2 != 0)
+                currentButton.setText("X");
+                moveNum += 1;
+                // Fill out row win condition
+                winConditions[rowNum] += 1;
+                // Fill out column win condition
+                winConditions[ROWLENGTH + colNum] += 1;
+                // Fill out diagonal win condition
+                if (rowNum == colNum)
                 {
-                    currentButton.setText("X");
-                    moveNum += 1;
-                    // Fill out row win condition
-                    winConditions[rowNum] += 1;
-                    // Fill out column win condition
-                    winConditions[ROWLENGTH + colNum] += 1;
-                    // Fill out diagonal win condition
-                    if (rowNum == colNum)
-                    {
-                        winConditions[2*ROWLENGTH] += 1;
-                    }
-                    // Fill out anti-diagonal win condition
-                    if (ROWLENGTH - 1 - colNum == rowNum)
-                    {
-                        winConditions[2*ROWLENGTH + 1] += 1;
-                    }
+                    winConditions[2*ROWLENGTH] += 1;
                 }
-                // O turn to move on even nums
-                else {
-                    currentButton.setText("O");
-                    moveNum += 1;
-                    // Fill out row win condition
-                    winConditions[rowNum] -= 1;
-                    // Fill out column win condition
-                    winConditions[ROWLENGTH + colNum] -= 1;
-                    // Fill out diagonal win condition
-                    if (rowNum == colNum)
-                    {
-                        winConditions[2*ROWLENGTH] -= 1;
-                    }
-                    // Fill out anti-diagonal win condition
-                    if (ROWLENGTH - 1 - colNum == rowNum)
-                    {
-                        winConditions[2*ROWLENGTH + 1] -= 1;
-                    }
-                }
-
-                for (int i = 0; i < winConditions.length; i++)
+                // Fill out anti-diagonal win condition
+                if (ROWLENGTH - 1 - colNum == rowNum)
                 {
-                    if (winConditions[i] == 3)
-                    {
-                        winTextView.setText("Player 1 wins");
-                        for (int j = 0; j < buttons.length; j++)
-                        {
-                            buttons[j].setClickable(false);
-                        }
-                        break;
-                    }
-                    else if (winConditions[i] == -3)
-                    {
-                        winTextView.setText("Player 2 wins");
-                        for (int j = 0; j < buttons.length; j++)
-                        {
-                            buttons[j].setClickable(false);
-                        }
-                        break;
-                    }
-                }
-
-                // Now it is move 10 so all spaces filled && No other win condition is met
-                if (moveNum == 10 && winTextView.getText().equals(""))
-                {
-                    winTextView.setText("Draw");
+                    winConditions[2*ROWLENGTH + 1] += 1;
                 }
             }
+            // O turn to move on even nums
+            else {
+                currentButton.setText("O");
+                moveNum += 1;
+                // Fill out row win condition
+                winConditions[rowNum] -= 1;
+                // Fill out column win condition
+                winConditions[ROWLENGTH + colNum] -= 1;
+                // Fill out diagonal win condition
+                if (rowNum == colNum)
+                {
+                    winConditions[2*ROWLENGTH] -= 1;
+                }
+                // Fill out anti-diagonal win condition
+                if (ROWLENGTH - 1 - colNum == rowNum)
+                {
+                    winConditions[2*ROWLENGTH + 1] -= 1;
+                }
+            }
+
+            for (int i = 0; i < winConditions.length; i++)
+            {
+                if (winConditions[i] == 3)
+                {
+                    winTextView.setText("Player 1 wins");
+                    for (int j = 0; j < buttons.length; j++)
+                    {
+                        buttons[j].setClickable(false);
+                    }
+                    break;
+                }
+                else if (winConditions[i] == -3)
+                {
+                    winTextView.setText("Player 2 wins");
+                    for (int j = 0; j < buttons.length; j++)
+                    {
+                        buttons[j].setClickable(false);
+                    }
+                    break;
+                }
+            }
+
+            // Now it is move 10 so all spaces filled && No other win condition is met
+            if (moveNum == 10 && winTextView.getText().equals(""))
+            {
+                winTextView.setText("Draw");
+            }
+
         }
     };
 }
